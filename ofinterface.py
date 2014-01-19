@@ -127,7 +127,8 @@ def add_actions(flow_mod, action_tlvs):
 	    label = parser.OFPMatchField.make(ofproto.OXM_OF_MPLS_LABEL, newlabel)
 	    actions.append(parser.OFPActionSetField(label))
 	elif action._type == RFAT_POP_MPLS:
-	    ethertype = ether.ETH_TYPE_8021Q
+	    #ethertype = ether.ETH_TYPE_8021Q
+	    ethertype = ether.ETH_TYPE_IP
             actions.append(parser.OFPActionPopMpls(ethertype))
         elif action.optional():
             log.info("Dropping unsupported Action (type: %s)" % action._type)
