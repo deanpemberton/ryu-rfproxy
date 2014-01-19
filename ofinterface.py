@@ -5,6 +5,7 @@ from binascii import *
 from rflib.types.Match import *
 from rflib.types.Action import *
 from rflib.types.Option import *
+from ryu.ofproto import ether
 
 OFP_BUFFER_NONE = 0xffffffff
 log = logging.getLogger('ryu.app.rfproxy')
@@ -92,6 +93,8 @@ def add_matches(flow_mod, matches):
             flow_mod.match.set_tcp_dst(bin_to_int(match._value))
         elif match._type == RFMT_IN_PORT:
             flow_mod.match.set_in_port(bin_to_int(match._value))
+	elif match._type == RFMT_MPLS:
+	    flow_mod.match.set_mpls_label(bin_to_int(match._value))
         elif TLV.optional(match):
             log.info("Dropping unsupported Match (type: %s)" % match._type)
         else:
@@ -117,6 +120,15 @@ def add_actions(flow_mod, action_tlvs):
             dstMac = action._value
             dst = parser.OFPMatchField.make(ofproto.OXM_OF_ETH_DST, dstMac)
             actions.append(parser.OFPActionSetField(dst))
+	elif action._type == RFAT_PUSH_MPLS:
+            newlabel = bin_to_int(action._value)
+            ethertype = ether.ETH_TYPE_MPLS
+            actions.append(parser.OFPActionPushMpls(ethertype))
+	    label = parser.OFPMatchField.make(ofproto.OXM_OF_MPLS_LABEL, newlabel)
+	    actions.append(parser.OFPActionSetField(label))
+	elif action._type == RFAT_POP_MPLS:
+	    ethertype = ether.ETH_TYPE_8021Q
+            actions.append(parser.OFPActionPopMpls(ethertype))
         elif action.optional():
             log.info("Dropping unsupported Action (type: %s)" % action._type)
         else:
